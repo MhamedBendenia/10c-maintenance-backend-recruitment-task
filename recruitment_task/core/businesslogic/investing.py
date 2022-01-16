@@ -20,3 +20,15 @@ def invest_into_project(investor: Investor, project: Project) -> None:
 
     if investor.project_delivery_deadline < project.delivery_date:
         raise CannotInvestIntoProjectException("Project is not meeting investor's deadline")
+
+    try:
+        # Updating project information
+        project.funded = True
+        project.funded_by = investor
+        project.save()
+
+        # Updating investor information
+        investor.remaining_amount = investor.remaining_amount - project.amount
+        investor.save()
+    except Exception as e:
+        print(str(e))

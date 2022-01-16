@@ -22,6 +22,17 @@ class Investor(models.Model):
 
     def __str__(self):
         return f"Investor: {self.name}"
+    
+    # List of all matching projects ids
+    @property
+    def matching_projects_ids(self):
+        max_amount = min(self.remaining_amount, self.individual_amount)
+        matching_projects = Project.objects.filter(
+            funded = False, 
+            amount__lte = max_amount,
+            delivery_date__lte = self.project_delivery_deadline
+            )
+        return [project.id for project in matching_projects]
 
 
 class Project(models.Model):
@@ -49,3 +60,16 @@ class Project(models.Model):
 
     def __str__(self):
         return f"Project: {self.name}"
+
+    # List of all matching investors ids
+    @property
+    def matching_investors_ids(self):
+        if self.funded == True:
+            return []
+        else:
+            matching_investors = Investor.objects.filter(
+                remaining_amount__gte = self.amount, 
+                individual_amount__gte = self.amount,
+                project_delivery_deadline__gte = self.delivery_date
+            )
+            return [investor.id for investor in matching_investors]

@@ -1,3 +1,4 @@
+from django.http import request
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -6,7 +7,7 @@ from rest_framework.views import APIView
 from core.businesslogic.errors import CannotInvestIntoProjectException
 from core.businesslogic.investing import invest_into_project
 from core.models import Project, Investor
-from core.serializers import ProjectSerializer, ProjectDetailsSerializer, InvestorSerializer, InvestorDetailsSerializer
+from core.serializers import *
 
 
 class ProjectsView(generics.ListCreateAPIView):
@@ -82,3 +83,33 @@ class InvestIntoProject(APIView):
                 "remaining_amount": investor.remaining_amount
             }
         )
+
+
+class ProjectMatches(generics.ListAPIView):
+    queryset = Investor.objects.all()
+    serializer_class = InvestorsListSerializer
+    
+    # Display only matching investors
+    def get_queryset(self):
+        queryset = Investor.objects.all()
+        
+        project_id = self.kwargs["project_id"]
+        investors_ids = Project.objects.get(id = project_id).matching_investors_ids
+        
+        queryset = queryset.filter(id__in = investors_ids)
+        return queryset
+
+
+class InvestorMatches(generics.ListAPIView):
+    queryset = Project.objects.all()
+    serializer_class = ProjectsListSerializer
+
+    # Display only matching projects
+    def get_queryset(self):
+        queryset = Project.objects.all()
+        
+        investor_id = self.kwargs["pk"]
+        projects_ids = Investor.objects.get(id = investor_id).matching_projects_ids
+        
+        queryset = queryset.filter(id__in = projects_ids)
+        return queryset
